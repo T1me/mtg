@@ -10,6 +10,7 @@ import (
 	"github.com/9seconds/mtg/config"
 	"github.com/9seconds/mtg/mtproto"
 	"github.com/9seconds/mtg/obfuscated2"
+	"github.com/9seconds/mtg/utils"
 	"github.com/9seconds/mtg/wrappers"
 )
 
@@ -35,6 +36,14 @@ func DirectInit(ctx context.Context, cancel context.CancelFunc, socket net.Conn,
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "Cannot extract frame")
 	}
+	
+	if conf.AntiReplay {
+		if isReplay := utils.PPbloomCheck(frame); isReplay == true {
+			return nil, nil, errors.Annotate(err, "Replay attack detected")
+		}
+		utils.PPbloomAdd(frame)
+	}
+
 	socket.SetReadDeadline(time.Time{}) // nolint: errcheck, gosec
 
 	conn := wrappers.NewConn(ctx, cancel, socket, connID, wrappers.ConnPurposeClient, conf.PublicIPv4, conf.PublicIPv6)

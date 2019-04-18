@@ -17,6 +17,7 @@ type Config struct {
 	Verbose    bool
 	SecureMode bool
 	SecureOnly bool
+	AntiReplay bool
 
 	ReadBufferSize  int
 	WriteBufferSize int
@@ -120,7 +121,7 @@ func NewConfig(debug, verbose bool, // nolint: gocyclo
 	bindPort, publicIPv4Port, publicIPv6Port, statsPort, statsdPort uint16,
 	statsdIP, statsdNetwork, statsdPrefix, statsdTagsFormat string,
 	statsdTags map[string]string, prometheusPrefix string,
-	secureOnly bool,
+	secureOnly bool, antiReplay bool,
 	secret, adtag []byte) (*Config, error) {
 	secureMode := secureOnly
 	if bytes.HasPrefix(secret, []byte{0xdd}) && len(secret) == 17 {
@@ -163,6 +164,7 @@ func NewConfig(debug, verbose bool, // nolint: gocyclo
 		Debug:           debug,
 		Verbose:         verbose,
 		SecureOnly:      secureOnly,
+		AntiReplay:      antiReplay,
 		BindIP:          bindIP,
 		BindPort:        bindPort,
 		PublicIPv4:      publicIPv4,

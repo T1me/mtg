@@ -18,6 +18,7 @@ import (
 	"github.com/9seconds/mtg/ntp"
 	"github.com/9seconds/mtg/proxy"
 	"github.com/9seconds/mtg/stats"
+	"github.com/9seconds/mtg/utils"
 )
 
 var version = "dev" // this has to be set by build ld flags
@@ -133,6 +134,10 @@ var (
 		Short('s').
 		Envar("MTG_SECURE_ONLY").
 		Bool()
+	antiReplay = app.Flag("anti-replay",
+		"Prevent replay attack.").
+		Envar("MTG_ANTI_REPLAY").
+		Bool()
 
 	secret = app.Arg("secret", "Secret of this proxy.").Required().HexBytes()
 	adtag  = app.Arg("adtag", "ADTag of the proxy.").HexBytes()
@@ -155,7 +160,7 @@ func main() { // nolint: gocyclo
 		*bindIP, *publicIPv4, *publicIPv6, *statsIP,
 		*bindPort, *publicIPv4Port, *publicIPv6Port, *statsPort, *statsdPort,
 		*statsdIP, *statsdNetwork, *statsdPrefix, *statsdTagsFormat,
-		*statsdTags, *prometheusPrefix, *secureOnly,
+		*statsdTags, *prometheusPrefix, *secureOnly, *antiReplay,
 		*secret, *adtag,
 	)
 	if err != nil {
@@ -200,6 +205,10 @@ func main() { // nolint: gocyclo
 
 	if err := stats.Init(conf); err != nil {
 		panic(err)
+	}
+
+	if conf.SecureOnly {
+		utils.PPbloomInit(1000000, 0.00001)
 	}
 
 	server := proxy.NewProxy(conf)
