@@ -19,6 +19,8 @@ import (
 	"github.com/9seconds/mtg/proxy"
 	"github.com/9seconds/mtg/stats"
 	"github.com/9seconds/mtg/utils"
+
+	_ "net/http/pprof"
 )
 
 var version = "dev" // this has to be set by build ld flags
@@ -207,8 +209,9 @@ func main() { // nolint: gocyclo
 		panic(err)
 	}
 
-	if conf.SecureOnly {
-		utils.PPbloomInit(1000000, 0.00001)
+	if conf.AntiReplay {
+		zap.S().Infow("Initializing Anti-Replay Bloom Filter")
+		utils.PPbloomInit(500000, 0.00001)
 	}
 
 	server := proxy.NewProxy(conf)

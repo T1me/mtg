@@ -12,6 +12,8 @@ import (
 	"github.com/9seconds/mtg/obfuscated2"
 	"github.com/9seconds/mtg/utils"
 	"github.com/9seconds/mtg/wrappers"
+	
+	"go.uber.org/zap"
 )
 
 const handshakeTimeout = 10 * time.Second
@@ -36,21 +38,26 @@ func DirectInit(ctx context.Context, cancel context.CancelFunc, socket net.Conn,
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "Cannot extract frame")
 	}
-	
-	if conf.AntiReplay {
-		if isReplay := utils.PPbloomCheck(frame); isReplay == true {
-			return nil, nil, errors.Annotate(err, "Replay attack detected")
-		}
-		utils.PPbloomAdd(frame)
-	}
 
 	socket.SetReadDeadline(time.Time{}) // nolint: errcheck, gosec
 
-	conn := wrappers.NewConn(ctx, cancel, socket, connID, wrappers.ConnPurposeClient, conf.PublicIPv4, conf.PublicIPv6)
 	obfs2, connOpts, err := obfuscated2.ParseObfuscated2ClientFrame(conf.Secret, frame)
 	if err != nil {
 		return nil, nil, errors.Annotate(err, "Cannot parse obfuscated frame")
 	}
+	
+	if conf.AntiReplay {
+		log := zap.S().With("connection_id", connID).Named("anti-replay")
+		if isReplay := utils.PPbloomCheck(frame); isReplay == true {
+			log.Warnw("Bloom filter detected existed header")
+			return nil, nil, errors.New("Replay attack detected")
+		}
+		log.Infow("Bloom filter recorded new header")
+		utils.PPbloomAdd(frame)
+	}
+
+	conn := wrappers.NewConn(ctx, cancel, socket, connID, wrappers.ConnPurposeClient, conf.PublicIPv4, conf.PublicIPv6)
+
 	connOpts.ConnectionProto = mtproto.ConnectionProtocolAny
 	connOpts.ClientAddr = conn.RemoteAddr()
 
