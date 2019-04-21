@@ -211,7 +211,7 @@ func main() { // nolint: gocyclo
 
 	if conf.AntiReplay {
 		zap.S().Infow("Initializing Anti-Replay Bloom Filter")
-		utils.PPbloomInit(500000, 0.00001)
+		utils.PPbloomInit(5000000, 0.00001)
 	}
 
 	server := proxy.NewProxy(conf)
