@@ -25,18 +25,18 @@ func PPbloomInit(n uint, fp float64) {
 	ppbcurrent = PING
 }
 
-func PPbloomCheck(frame []byte) bool {
-	if result := ppbloom[PING].Test(frame); result == true {
+func PPbloomCheck(keyAndIV []byte) bool {
+	if result := ppbloom[PING].Test(keyAndIV); result == true {
 		return result
-	} 
-	if result := ppbloom[PONG].Test(frame); result == true {
+	}
+	if result := ppbloom[PONG].Test(keyAndIV); result == true {
         return result
 	} 
 	return false
 }
 
-func PPbloomAdd(frame []byte) {
-	ppbloom[ppbcurrent].Add(frame)
+func PPbloomAdd(keyAndIV []byte) {
+	ppbloom[ppbcurrent].Add(keyAndIV)
 	bloom_count[ppbcurrent]++
 	if bloom_count[ppbcurrent] >= ppbentries {
 		bloom_count[ppbcurrent] = 0

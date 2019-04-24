@@ -46,14 +46,17 @@ func DirectInit(ctx context.Context, cancel context.CancelFunc, socket net.Conn,
 		return nil, nil, errors.Annotate(err, "Cannot parse obfuscated frame")
 	}
 	
+	key := frame.Key()
+	iv := frame.IV()
+	keyAndIV := append(key, iv...)
 	if conf.AntiReplay {
 		log := zap.S().With("connection_id", connID).Named("anti-replay")
-		if isReplay := utils.PPbloomCheck(frame); isReplay == true {
+		if isReplay := utils.PPbloomCheck(keyAndIV); isReplay == true {
 			log.Warnw("Bloom filter detected existed header")
 			return nil, nil, errors.New("Replay attack detected")
 		}
 		log.Infow("Bloom filter recorded new header")
-		utils.PPbloomAdd(frame)
+		utils.PPbloomAdd(keyAndIV)
 	}
 
 	conn := wrappers.NewConn(ctx, cancel, socket, connID, wrappers.ConnPurposeClient, conf.PublicIPv4, conf.PublicIPv6)
